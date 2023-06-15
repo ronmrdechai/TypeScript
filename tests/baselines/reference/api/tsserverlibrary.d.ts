@@ -170,7 +170,8 @@ declare namespace ts {
                 PrepareCallHierarchy = "prepareCallHierarchy",
                 ProvideCallHierarchyIncomingCalls = "provideCallHierarchyIncomingCalls",
                 ProvideCallHierarchyOutgoingCalls = "provideCallHierarchyOutgoingCalls",
-                ProvideInlayHints = "provideInlayHints"
+                ProvideInlayHints = "provideInlayHints",
+                WatchChange = "watchChange"
             }
             /**
              * A TypeScript Server message
@@ -1504,6 +1505,15 @@ declare namespace ts {
             interface CloseRequest extends FileRequest {
                 command: CommandTypes.Close;
             }
+            interface WatchChangeRequest extends Request {
+                command: CommandTypes.WatchChange;
+                arguments: WatchChangeRequestArgs;
+            }
+            interface WatchChangeRequestArgs {
+                id: number;
+                path: string;
+                eventType: "create" | "delete" | "update";
+            }
             /**
              * Request to obtain the list of files that should be regenerated if target file is recompiled.
              * NOTE: this us query-only operation and does not generate any output on disk.
@@ -2414,6 +2424,33 @@ declare namespace ts {
                  * max file size allowed on the server
                  */
                 maxFileSize: number;
+            }
+            type CreateFileWatcherEventName = "createFileWatcher";
+            interface CreateFileWatcherEvent extends Event {
+                readonly event: CreateFileWatcherEventName;
+                readonly body: CreateFileWatcherEventBody;
+            }
+            interface CreateFileWatcherEventBody {
+                readonly id: number;
+                readonly path: string;
+            }
+            type CreateDirectoryWatcherEventName = "createDirectoryWatcher";
+            interface CreateDirectoryWatcherEvent extends Event {
+                readonly event: CreateDirectoryWatcherEventName;
+                readonly body: CreateDirectoryWatcherEventBody;
+            }
+            interface CreateDirectoryWatcherEventBody {
+                readonly id: number;
+                readonly path: string;
+                readonly recursive: boolean;
+            }
+            type CloseFileWatcherEventName = "closeFileWatcher";
+            interface CloseFileWatcherEvent extends Event {
+                readonly event: CloseFileWatcherEventName;
+                readonly body: CloseFileWatcherEventBody;
+            }
+            interface CloseFileWatcherEventBody {
+                readonly id: number;
             }
             /**
              * Arguments for reload request.
@@ -3516,6 +3553,21 @@ declare namespace ts {
             readonly eventName: typeof OpenFileInfoTelemetryEvent;
             readonly data: OpenFileInfoTelemetryEventData;
         }
+        const CreateFileWatcherEvent: protocol.CreateFileWatcherEventName;
+        interface CreateFileWatcherEvent {
+            readonly eventName: protocol.CreateFileWatcherEventName;
+            readonly data: protocol.CreateFileWatcherEventBody;
+        }
+        const CreateDirectoryWatcherEvent: protocol.CreateDirectoryWatcherEventName;
+        interface CreateDirectoryWatcherEvent {
+            readonly eventName: protocol.CreateDirectoryWatcherEventName;
+            readonly data: protocol.CreateDirectoryWatcherEventBody;
+        }
+        const CloseFileWatcherEvent: protocol.CloseFileWatcherEventName;
+        interface CloseFileWatcherEvent {
+            readonly eventName: protocol.CloseFileWatcherEventName;
+            readonly data: protocol.CloseFileWatcherEventBody;
+        }
         interface ProjectInfoTelemetryEventData {
             /** Cryptographically secure hash of project file location. */
             readonly projectId: string;
@@ -3563,7 +3615,7 @@ declare namespace ts {
         interface OpenFileInfo {
             readonly checkJs: boolean;
         }
-        type ProjectServiceEvent = LargeFileReferencedEvent | ProjectsUpdatedInBackgroundEvent | ProjectLoadingStartEvent | ProjectLoadingFinishEvent | ConfigFileDiagEvent | ProjectLanguageServiceStateEvent | ProjectInfoTelemetryEvent | OpenFileInfoTelemetryEvent;
+        type ProjectServiceEvent = LargeFileReferencedEvent | ProjectsUpdatedInBackgroundEvent | ProjectLoadingStartEvent | ProjectLoadingFinishEvent | ConfigFileDiagEvent | ProjectLanguageServiceStateEvent | ProjectInfoTelemetryEvent | OpenFileInfoTelemetryEvent | CreateFileWatcherEvent | CreateDirectoryWatcherEvent | CloseFileWatcherEvent;
         type ProjectServiceEventHandler = (event: ProjectServiceEvent) => void;
         interface SafeList {
             [name: string]: {
@@ -3597,6 +3649,7 @@ declare namespace ts {
             useInferredProjectPerProjectRoot: boolean;
             typingsInstaller?: ITypingsInstaller;
             eventHandler?: ProjectServiceEventHandler;
+            canUseWatchEvents?: boolean;
             suppressDiagnosticEvents?: boolean;
             throttleWaitMilliseconds?: number;
             globalPlugins?: readonly string[];
@@ -3667,7 +3720,6 @@ declare namespace ts {
             readonly typingsInstaller: ITypingsInstaller;
             private readonly globalCacheLocationDirectoryPath;
             readonly throttleWaitMilliseconds?: number;
-            private readonly eventHandler?;
             private readonly suppressDiagnosticEvents?;
             readonly globalPlugins: readonly string[];
             readonly pluginProbeLocations: readonly string[];
@@ -3880,6 +3932,7 @@ declare namespace ts {
              * If falsy, all events are suppressed.
              */
             canUseEvents: boolean;
+            canUseWatchEvents?: boolean;
             eventHandler?: ProjectServiceEventHandler;
             /** Has no effect if eventHandler is also specified. */
             suppressDiagnosticEvents?: boolean;

@@ -172,7 +172,8 @@ export const enum CommandTypes {
     PrepareCallHierarchy = "prepareCallHierarchy",
     ProvideCallHierarchyIncomingCalls = "provideCallHierarchyIncomingCalls",
     ProvideCallHierarchyOutgoingCalls = "provideCallHierarchyOutgoingCalls",
-    ProvideInlayHints = "provideInlayHints"
+    ProvideInlayHints = "provideInlayHints",
+    WatchChange = "watchChange",
 }
 
 /**
@@ -1959,6 +1960,17 @@ export interface CloseRequest extends FileRequest {
     command: CommandTypes.Close;
 }
 
+export interface WatchChangeRequest extends Request {
+    command: CommandTypes.WatchChange;
+    arguments: WatchChangeRequestArgs;
+}
+
+export interface WatchChangeRequestArgs {
+    id: number;
+    path: string;
+    eventType: "create" | "delete" | "update"
+}
+
 /**
  * Request to obtain the list of files that should be regenerated if target file is recompiled.
  * NOTE: this us query-only operation and does not generate any output on disk.
@@ -3017,6 +3029,39 @@ export interface LargeFileReferencedEventBody {
     maxFileSize: number;
 }
 
+export type CreateFileWatcherEventName = "createFileWatcher";
+export interface CreateFileWatcherEvent extends Event {
+    readonly event: CreateFileWatcherEventName;
+    readonly body: CreateFileWatcherEventBody;
+}
+
+export interface CreateFileWatcherEventBody {
+    readonly id: number;
+    readonly path: string;
+}
+
+export type CreateDirectoryWatcherEventName = "createDirectoryWatcher";
+export interface CreateDirectoryWatcherEvent extends Event {
+    readonly event: CreateDirectoryWatcherEventName;
+    readonly body: CreateDirectoryWatcherEventBody;
+}
+
+export interface CreateDirectoryWatcherEventBody {
+    readonly id: number;
+    readonly path: string;
+    readonly recursive: boolean;
+}
+
+export type CloseFileWatcherEventName = "closeFileWatcher";
+export interface CloseFileWatcherEvent extends Event {
+    readonly event: CloseFileWatcherEventName;
+    readonly body: CloseFileWatcherEventBody;
+}
+
+export interface CloseFileWatcherEventBody {
+    readonly id: number;
+}
+
 /** @internal */
 export type AnyEvent =
     RequestCompletedEvent
@@ -3028,7 +3073,10 @@ export type AnyEvent =
     | ProjectLoadingStartEvent
     | ProjectLoadingFinishEvent
     | SurveyReadyEvent
-    | LargeFileReferencedEvent;
+    | LargeFileReferencedEvent
+    | CreateFileWatcherEvent
+    | CreateDirectoryWatcherEvent
+    | CloseFileWatcherEvent;
 
 /**
  * Arguments for reload request.
