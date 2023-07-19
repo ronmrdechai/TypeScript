@@ -3619,6 +3619,7 @@ export interface CompilerOptions {
     inlineSourceMap?: boolean;
     inlineSources?: boolean;
     isolatedModules?: boolean;
+    instantiationCountLimit?: number;
     jsx?: JsxEmit | ts.JsxEmit;
     lib?: string[];
     locale?: string;

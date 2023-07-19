@@ -8513,6 +8513,11 @@ export function getIsolatedModules(options: CompilerOptions) {
 }
 
 /** @internal */
+export function getInstantiationCountLimit(options: CompilerOptions) {
+    return options.instantiationCountLimit || 5000000;
+}
+
+/** @internal */
 export function importNameElisionDisabled(options: CompilerOptions) {
     return options.verbatimModuleSyntax || options.isolatedModules && options.preserveValueImports;
 }

@@ -295,6 +295,7 @@ import {
     getIdentifierTypeArguments,
     getImmediatelyInvokedFunctionExpression,
     getInitializerOfBinaryExpression,
+    getInstantiationCountLimit,
     getInterfaceBaseTypeNodes,
     getInvokedExpression,
     getIsolatedModules,
@@ -1435,6 +1436,7 @@ export function createTypeChecker(host: TypeCheckerHost): TypeChecker {
     var legacyDecorators = !!compilerOptions.experimentalDecorators;
     var useDefineForClassFields = getUseDefineForClassFields(compilerOptions);
     var allowSyntheticDefaultImports = getAllowSyntheticDefaultImports(compilerOptions);
+    var instantiationCountLimit = getInstantiationCountLimit(compilerOptions);
     var strictNullChecks = getStrictOptionValue(compilerOptions, "strictNullChecks");
     var strictFunctionTypes = getStrictOptionValue(compilerOptions, "strictFunctionTypes");
     var strictBindCallApply = getStrictOptionValue(compilerOptions, "strictBindCallApply");
@@ -19071,7 +19073,7 @@ export function createTypeChecker(host: TypeCheckerHost): TypeChecker {
         if (!couldContainTypeVariables(type)) {
             return type;
         }
-        if (instantiationDepth === 100 || instantiationCount >= 5000000) {
+        if (instantiationDepth === 100 || instantiationCount >= instantiationCountLimit) {
             // We have reached 100 recursive type instantiations, or 5M type instantiations caused by the same statement
             // or expression. There is a very high likelyhood we're dealing with a combination of infinite generic types
             // that perpetually generate new type identities, so we stop the recursion here by yielding the error type.
